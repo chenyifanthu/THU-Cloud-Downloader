@@ -4,9 +4,12 @@ import re
 from tqdm import tqdm
 import requests
 
+sess = requests.Session()
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--link', '-l', type=str, required=True, help='Share link of Tsinghua Cloud')
+    parser.add_argument('--password', '-p', type=str, default='', help='Password of the share link')
     parser.add_argument('--save', '-s', type=str, default='./', help='Save directory')
     parser.add_argument('--file', '-f', type=str, default=None, help='File name, support regex, if not set, download all files')
     return parser.parse_args()
@@ -20,9 +23,33 @@ def get_share_key(args):
     print('Share key: {}'.format(share_key))
     args.share_key = share_key
     
+def verify_password(pwd: str, share_key: str):
+    global sess
+    
+    r = sess.get(f"https://cloud.tsinghua.edu.cn/d/{share_key}/")
+    pattern = '<input type="hidden" name="csrfmiddlewaretoken" value="(.*)">'
+    csrfmiddlewaretoken = re.findall(pattern, r.text)
+    if not csrfmiddlewaretoken:
+        return
+    
+    # Verify password
+    csrfmiddlewaretoken = csrfmiddlewaretoken[0]
+    print("PASSWORD", pwd)
+    r = sess.post(f"https://cloud.tsinghua.edu.cn/d/{share_key}/", 
+                  data={"csrfmiddlewaretoken": csrfmiddlewaretoken, 
+                        "token": share_key, "password": pwd},
+                  headers={"Referer": f"https://cloud.tsinghua.edu.cn/d/{share_key}/"})
+    # print(r.text)
+    if "Please enter a correct password" in r.text:
+        raise ValueError("Couldn't download files, please check your password.")
+    elif "Please enter the password" in r.text:
+        raise ValueError("This share link needs password.")
+    
+    
 def dfs_search_files(share_key: str, path="/"):
+    global sess
     filelist = []
-    r = requests.get('https://cloud.tsinghua.edu.cn/api/v2.1/share-links/{}/dirents/?path={}'.format(share_key, path))
+    r = sess.get('https://cloud.tsinghua.edu.cn/api/v2.1/share-links/{}/dirents/?path={}'.format(share_key, path))
     objects = r.json()['dirent_list']
     for obj in objects:
         if obj["is_dir"]:
@@ -36,7 +63,8 @@ def dfs_search_files(share_key: str, path="/"):
     return filelist
     
 def download_single_file(url: str, fname: str):
-    resp = requests.get(url, stream=True)
+    global sess
+    resp = sess.get(url, stream=True)
     total = int(resp.headers.get('content-length', 0))
     with open(fname, 'wb') as file, tqdm(
         total=total,
@@ -50,6 +78,9 @@ def download_single_file(url: str, fname: str):
             bar.update(size)
 
 def download(args):
+    get_share_key(args)
+    verify_password(args.password, args.share_key)
+    
     print("Searching for files to be downloaded...")
     filelist = sorted(dfs_search_files(args.share_key), key=lambda x: x['file_path'])
     print("Found {} files in the share link.".format(len(filelist)))
@@ -84,5 +115,4 @@ def download(args):
     
 if __name__ == "__main__":
     args = parse_args()
-    get_share_key(args)
     download(args)
