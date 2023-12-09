@@ -69,6 +69,11 @@ def dfs_search_files(share_key: str, path="/"):
             mat = re.match(args.file.replace('*', '.*'), obj['file_name'])
             if mat is not None and mat.span()[1] == len(obj['file_name']):
                 filelist.append(obj)
+                continue
+            mat = re.match(args.file.replace('*', '.*'), obj['file_path'])
+            if mat is not None and mat.span()[1] == len(obj['file_path']):
+                filelist.append(obj)
+                continue
     return filelist
 
 
