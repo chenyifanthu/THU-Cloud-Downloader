@@ -1,1 +1,17 @@
-forked from chenyifanthu/THU-Cloud-Downloader, but fix the bug of URL encoding issues
+2022.10.28
+- 支持文件夹递归下载
+- 支持指定文件后缀下载。（--file / -f参数）
+
+2022.11.12
+- 支持对含密码文件夹的下载（--password / -p参数）
+
+2023.09.14
+- Fix the bug of URL encoding issues
+
+2023.12.18
+- 重构了部分代码和函数
+- 取消了 *--passord, -p* 参数，对于带密码的链接，将密码输入移到运行过程中输入；
+- 使用fnmatch库来匹配文件路径，可以支持更多匹配模式；
+- 支持读取链接中根目录名称 (`get_root_dir`函数)，并在保存时创建根目录。
+- Filelist 过长时隐藏部分文件输出；
+- 下载文件时将所有文件合成一个进度条。

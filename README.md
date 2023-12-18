@@ -1,29 +1,62 @@
 # Tsinghua Cloud Downloader
 根据清华云盘的分享链接批量下载文件。
 
-## Updates
-- **2022.11.12** 更新了一些功能
-
-    - 支持对含密码文件夹的下载（--password / -p参数）
-
-- **2022.10.28** 首次更新
-
-    - 支持文件夹递归下载
-
-    - 支持任意大小文件下载
-
-    - 支持指定文件后缀下载。（--file / -f参数）
-
-
 ## Dependency
-    pip install tqdm
+```shell
+pip install tqdm
+```
 
 ## Usage
-- Show optional arguments
+|Flags|Default|Description|
+|----|----|----|
+|*--link, -l* |**Required** |Share link of Tsinghua Cloud.|
+|*--save_dir, -s* | `~/Desktop` | Path to save the files. Default: Desktop |
+|*--file, -f* | None | Regex to match the file path. Default: download all files.|
+
+### Example
+```shell
+python thu_cloud_download.py \
+    -l https://cloud.tsinghua.edu.cn/d/1234567890/ 
+    -s "/PATH/TO/SAVE" \
+    -f "*.pptx?" (regex, 正则表达式) \
 ```
-    python main.py -h
-```
+### Support file format
+*--file, -f* 参数支持 UNIX shell 风格的 pattern 字符串，支持使用如下几个通配符：
+
+- **\***: 可匹配任意个任意字符。
+- **?**:可匹配一个任意字符。
+- **\[字符序列\]**: 可匹配中括号里字符序列中的任意字符。该字符序列也支持中画线表示法。比如 \[a-c\] 可代表 a, b 和 c 字符中任意一个。
+- **\[\!字符序列\]**: 可匹配不在中括号里字符序列中的任意字符。
+
+具体用法如下
+```shell
+# 下载链接中所有文件
+python main.py -l https://xxx
+# 下载链接中所有的.txt文件
+python main.py -l https://xxx -f *.txt
+# 下载链接中某个文件夹的所有文件
+python main.py -l https://xxx -f folder/subfolder/*
+``` 
+
 
 ## Output Log Example
 下载链接中的全部txt文件
-<img src="example.jpg" width=800>
+```
+>>  python main.py -l https://cloud.tsinghua.edu.cn/d/b9aca92417f04166acdc/ -f *.pcd
+
+2023-12-18 21:15:11,853 - INFO - Share key: b9aca92417f04166acdc
+2023-12-18 21:15:12,811 - INFO - Searching for files to be downloaded, Wait a moment...
+=======================================================
+Last Modified Time           File Size   File Path
+-------------------------------------------------------
+2022-06-27T19:30:21+08:00     53324648   /cam3.pcd
+2022-06-27T19:30:28+08:00     52693930   /cam4.pcd
+2022-06-27T19:30:35+08:00     52672991   /cam5.pcd
+2022-06-27T19:30:42+08:00     52774114   /cam6.pcd
+-------------------------------------------------------
+2023-12-18 21:15:14,449 - INFO - # Files: 4. Total size:  201.7 MB.
+Start downloading? [y/n]y
+2023-12-18 21:15:25,671 - INFO - Root directory name: livoxscan_20220626
+[4/4]: 100%|███████████████████████████████| 202M/202M [00:33<00:00, 6.26MiB/s]
+2023-12-18 21:15:59,479 - INFO - Download finished.
+```
