@@ -113,14 +113,14 @@ def download(share_key: str, filelist: list, save_dir: str) -> None:
     total_size = sum([file["size"] for file in filelist])
     pbar = tqdm(total=total_size, ncols=120, unit='iB', unit_scale=True, unit_divisor=1024)
     for i, file in enumerate(filelist):
-        file_url = 'https://cloud.tsinghua.edu.cn/d/{}/files/?p={}&dl=1'.format(share_key, file["file_path"])
+        encoded_path = urllib.parse.quote(path)
+        file_url = 'https://cloud.tsinghua.edu.cn/d/{}/files/?p={}&dl=1'.format(share_key, encoded_path)
         save_path = os.path.join(save_dir, file["file_path"][1:])
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         # logging.info("[{}/{}] Downloading File: {}".format(i + 1, len(filelist), save_path))
         try:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             pbar.set_description("[{}/{}]".format(i + 1, len(filelist)))
             download_single_file(file_url, save_path, pbar)
-            
         except Exception as e:
             logging.error("Error happened when downloading file: {}".format(save_path))
             logging.error(e)
